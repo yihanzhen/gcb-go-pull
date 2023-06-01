@@ -1,0 +1,33 @@
+steps:
+# Run the auth tool to add the regional AR endpoint where the repo is to the netrc file
+- name: golang
+  entrypoint: go
+  args: ['run', 'github.com/GoogleCloudPlatform/artifact-registry-go-tools/cmd/auth@v0.1.0', 'add-locations', '--locations=europe-west1']
+  env:
+  # Set GOPROXY to the public proxy to pull the auth tool
+  - 'GOPROXY=https://proxy.golang.org'
+# Run the auth tool again to refresh the oauth tokens
+# Note the application default credentials should be the service account of GCB, which
+# should have access to all AR repos in the same project
+- name: golang
+  entrypoint: go
+  args: ['run', 'github.com/GoogleCloudPlatform/artifact-registry-go-tools/cmd/auth@v0.1.0', 'refresh']
+  env:
+   # Set GOPROXY to the public proxy to pull the auth tool
+  - 'GOPROXY=https://proxy.golang.org'
+# Run the current module. It will print out HelloWord, where HelloWorld
+# is a string defined in another Go module required by this module.
+- name: golang
+  entrypoint: go
+  # This can also be changed to `go build` to compile the module, `go test` to run the tests or
+  # or `go mod tidy` to just download the dependencies.
+  args: ['run', '.']
+  env:
+   # Set GOPROXY to the AR repo that hosts private dependencies.
+   # It can also be set to https://europe...,https://proxy.golang.org
+   # if the module has other public dependencies.
+  - 'GOPROXY=https://europe-west1-go.pkg.dev/hanzhenyi3/go-repo'
+options:
+  env:
+  # Disable GO sumdb checks for private modules.
+  - 'GONOSUMDB=github.com/yihanzhen/gcb-go-push'
